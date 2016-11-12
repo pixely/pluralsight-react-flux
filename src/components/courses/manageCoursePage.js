@@ -5,6 +5,8 @@ var Router = require('react-router');
 var CourseForm = require('./courseForm');
 var CourseActions = require('../../actions/courseActions');
 var CourseStore = require('../../stores/courseStore');
+var AuthorStore = require('../../stores/authorStore');
+var _ = require('lodash');
 var toastr = require('toastr');
 
 var ManageCoursePage = React.createClass({
@@ -20,6 +22,7 @@ var ManageCoursePage = React.createClass({
   },
   getInitialState: function () {
     return {
+      authors: "",
       course: {
         id: "",
         title: "",
@@ -41,6 +44,9 @@ var ManageCoursePage = React.createClass({
     if (courseId) {
       this.setState({course: CourseStore.getCourseById(courseId)});
     }
+
+    this.setState({authors: AuthorStore.getAllAuthors()});
+
   },
   setCourseState: function (event) {
     this.setState({dirty: true});
@@ -64,7 +70,7 @@ var ManageCoursePage = React.createClass({
       formIsValid = false;
     }
 
-    if (this.state.course.length.length < 3) {
+    if (this.state.course.length.length < 1) {
       this.state.errors.length = 'Length must be at least 1 character.';
       formIsValid = false;
     }
@@ -74,9 +80,26 @@ var ManageCoursePage = React.createClass({
       formIsValid = false;
     }
 
+    if (!this.setAuthor(this.state.course.author) ) {
+      this.state.errors.author = 'An author is required for this course';
+      formIsValid = false;
+    }
+
     this.setState({errors: this.state.errors});
     return formIsValid;
 
+  },
+  setAuthor: function (id) {
+   var author = _.find(this.state.authors, {id: id});
+    if( typeof author === 'object' ) {
+      this.state.course.author = {
+        id: author.id,
+        name: author.firstName + ' ' + author.lastName
+      };
+      this.setState({course: this.state.course});
+      return true;
+    }
+    return false;
   },
   saveCourse: function (event) {
     event.preventDefault();
@@ -99,6 +122,7 @@ var ManageCoursePage = React.createClass({
     return (
         <CourseForm
             course={this.state.course}
+            authors={this.state.authors}
             onChange={this.setCourseState}
             onSave={this.saveCourse}
             errors={this.state.errors}/>
